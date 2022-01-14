@@ -1,9 +1,11 @@
 use std::fmt::{Debug, Formatter};
 
+use serde::Deserialize;
+use serde::Serialize;
 fn main() {
     println!("Hello, world!");
 }
-
+#[derive(Deserialize,Serialize)]
 struct MicroArch {
     micro_code_pc: u16,
     micro_code: Vec<MicroCode>,
@@ -19,125 +21,169 @@ struct MicroArch {
     hlt: bool,
 }
 impl MicroArch {
+    fn construct(micro_codes: Vec<MicroCode>) -> Self {
+        Self {
+            micro_code_pc: 0,
+            micro_code: micro_codes,
+            memory: vec![],
+            gpr: [0; 7],
+            pc: 0,
+            ir: 0,
+            mdr: 0,
+            mar: 0,
+            str: 0,
+            sw1: 0,
+            sw2: 0,
+            hlt: false,
+        }
+    }
     /// execute microcode.
     fn exec(&mut self) {
-        // fetch micro code .
-        let micro_code = self.micro_code[self.micro_code_pc as usize];
+        if !self.hlt {
+            // fetch micro code .
+            let micro_code = self.micro_code[self.micro_code_pc as usize];
 
-        let x_bus = self.data_load(micro_code.x_bus);
-        let y_bus = self.data_load(micro_code.y_bus);
-        let alu_out = match micro_code.alu {
-            AluOp::XPlusY => x_bus.wrapping_add(y_bus),
-            AluOp::XMinusY => x_bus.wrapping_sub(y_bus),
-            AluOp::XAndY => x_bus & y_bus,
-            AluOp::XorY => x_bus | y_bus,
-            AluOp::XxorY => x_bus ^ y_bus,
-            AluOp::XPlus1 => x_bus + 1,
-            AluOp::XMinus1 => x_bus - 1,
-        };
-        //extract carry flag
-        let cf = (self.str & 0b00000100) >> 2;
+            let x_bus = self.data_load(micro_code.x_bus);
+            let y_bus = self.data_load(micro_code.y_bus);
+            let alu_out = match micro_code.alu {
+                AluOp::XPlusY => x_bus.wrapping_add(y_bus),
+                AluOp::XMinusY => x_bus.wrapping_sub(y_bus),
+                AluOp::XAndY => x_bus & y_bus,
+                AluOp::XorY => x_bus | y_bus,
+                AluOp::XxorY => x_bus ^ y_bus,
+                AluOp::XPlus1 => x_bus + 1,
+                AluOp::XMinus1 => x_bus - 1,
+            };
 
-        const MSB: u8 = 0b10000000;
-        const LSB: u8 = 0b00000001;
+            if micro_code.fl {
+                if (alu_out & MSB) == MSB {
+                    self.str |= 0x01;
+                } else {
+                    self.str &= 0b11111110;
+                }
+                if alu_out == 0 {
+                    self.str |= 0x02;
+                } else {
+                    self.str &= 0b11111101;
+                }
+                if (x_bus as usize) + (y_bus as usize) > 255 {
+                    self.str |= 0x04;
+                } else {
+                    self.str &= 0b11111011;
+                }
+                let test = (x_bus as isize) + (y_bus as isize);
+                if (127 < test) | (test < -128) {
+                    self.str |= 0x08;
+                } else {
+                    self.str &= 0b11110111;
+                }
+            }
+            //extract carry flag
+            let cf = (self.str & 0b00000100) >> 2;
 
-        let z_bus = match micro_code.sft {
-            ShiftOp::Nop => alu_out,
-            ShiftOp::RRwC => {
-                //
-                self.str |= (alu_out & LSB) << 2;
-                let x = (alu_out >> 1);
-                if cf == 1 {
-                    x | MSB
-                } else {
-                    x
+            const MSB: u8 = 0b10000000;
+            const LSB: u8 = 0b00000001;
+
+            let z_bus = match micro_code.sft {
+                ShiftOp::Nop => alu_out,
+                ShiftOp::RRwC => {
+                    //
+                    self.str |= (alu_out & LSB) << 2;
+                    let x = alu_out >> 1;
+                    if cf == 1 {
+                        x | MSB
+                    } else {
+                        x
+                    }
                 }
-            }
-            ShiftOp::RlwC => {
-                self.str |= (alu_out & MSB) >> 4;
-                let x = (alu_out << 1);
-                if cf == 1 {
-                    x | LSB
-                } else {
-                    x
+                ShiftOp::RlwC => {
+                    self.str |= (alu_out & MSB) >> 4;
+                    let x = alu_out << 1;
+                    if cf == 1 {
+                        x | LSB
+                    } else {
+                        x
+                    }
                 }
-            }
-            ShiftOp::SRL => {
-                self.str |= (alu_out & LSB) << 2;
-                let x = (alu_out >> 1);
-                if micro_code.sin {
-                    x | MSB
-                } else {
-                    x
+                ShiftOp::SRL => {
+                    self.str |= (alu_out & LSB) << 2;
+                    let x = alu_out >> 1;
+                    if micro_code.sin {
+                        x | MSB
+                    } else {
+                        x
+                    }
                 }
-            }
-            ShiftOp::SLL | ShiftOp::SLA => {
-                self.str |= (alu_out & MSB) >> 4;
-                let x = (alu_out << 1);
-                if micro_code.sin {
-                    x | LSB
-                } else {
-                    x
+                ShiftOp::SLL | ShiftOp::SLA => {
+                    self.str |= (alu_out & MSB) >> 4;
+                    let x = alu_out << 1;
+                    if micro_code.sin {
+                        x | LSB
+                    } else {
+                        x
+                    }
                 }
-            }
-            ShiftOp::SRA => {
-                let msb = (alu_out & MSB);
-                self.str |= ((alu_out >> 1) << 2);
-                msb | (alu_out >> 1)
-            }
-        };
-        match micro_code.z_bus {
-            Register::Nop => {}
-            Register::R0 => self.gpr[0] = z_bus,
-            Register::R1 => self.gpr[1] = z_bus,
-            Register::R2 => self.gpr[2] = z_bus,
-            Register::R3 => self.gpr[3] = z_bus,
-            Register::R4 => self.gpr[4] = z_bus,
-            Register::R5 => self.gpr[5] = z_bus,
-            Register::R6 => self.gpr[6] = z_bus,
-            Register::Pc => self.pc = z_bus,
-            Register::Ir => self.ir = z_bus,
-            Register::Mdr => self.mdr = z_bus,
-            Register::Mar => self.mar = z_bus,
-            Register::Str => self.str = z_bus,
-        }
-        match micro_code.mem {
-            MemOp::Nop => {}
-            MemOp::R => self.mdr = self.memory[self.mar as usize],
-            MemOp::W => self.memory[self.mar as usize] = self.mdr,
-        }
-        match micro_code.branch {
-            Branch::Plus1 => self.micro_code_pc += 1,
-            Branch::J => self.micro_code_pc = micro_code.addr,
-            Branch::JM => {
-                if (self.str & 0x01) == 0x01 {
-                    self.micro_code_pc = micro_code.addr;
-                } else {
-                    self.micro_code_pc += 1;
+                ShiftOp::SRA => {
+                    let msb = alu_out & MSB;
+                    self.str |= (alu_out >> 1) << 2;
+                    msb | (alu_out >> 1)
                 }
+            };
+            match micro_code.z_bus {
+                Register::Nop => {}
+                Register::R0 => self.gpr[0] = z_bus,
+                Register::R1 => self.gpr[1] = z_bus,
+                Register::R2 => self.gpr[2] = z_bus,
+                Register::R3 => self.gpr[3] = z_bus,
+                Register::R4 => self.gpr[4] = z_bus,
+                Register::R5 => self.gpr[5] = z_bus,
+                Register::R6 => self.gpr[6] = z_bus,
+                Register::Pc => self.pc = z_bus,
+                Register::Ir => self.ir = z_bus,
+                Register::Mdr => self.mdr = z_bus,
+                Register::Mar => self.mar = z_bus,
+                Register::Str => self.str = z_bus,
             }
-            Branch::JZ => {
-                if (self.str & 0x02) == 0x02 {
-                    self.micro_code_pc = micro_code.addr;
-                } else {
-                    self.micro_code_pc += 1;
+            match micro_code.mem {
+                MemOp::Nop => {}
+                MemOp::R => self.mdr = self.memory[self.mar as usize],
+                MemOp::W => self.memory[self.mar as usize] = self.mdr,
+            }
+            match micro_code.branch {
+                Branch::Plus1 => self.micro_code_pc += 1,
+                Branch::J => self.micro_code_pc = micro_code.addr,
+                Branch::JM => {
+                    if (self.str & 0x01) == 0x01 {
+                        self.micro_code_pc = micro_code.addr;
+                    } else {
+                        self.micro_code_pc += 1;
+                    }
                 }
-            }
-            Branch::JC => {
-                if (self.str & 0x04) == 0x04 {
-                    self.micro_code_pc = micro_code.addr;
-                } else {
-                    self.micro_code_pc += 1;
+                Branch::JZ => {
+                    if (self.str & 0x02) == 0x02 {
+                        self.micro_code_pc = micro_code.addr;
+                    } else {
+                        self.micro_code_pc += 1;
+                    }
                 }
-            }
-            Branch::JV => {
-                if (self.str & 0x08) == 0x08 {
-                    self.micro_code_pc = micro_code.addr;
-                } else {
-                    self.micro_code_pc += 1;
+                Branch::JC => {
+                    if (self.str & 0x04) == 0x04 {
+                        self.micro_code_pc = micro_code.addr;
+                    } else {
+                        self.micro_code_pc += 1;
+                    }
                 }
+                Branch::JV => {
+                    if (self.str & 0x08) == 0x08 {
+                        self.micro_code_pc = micro_code.addr;
+                    } else {
+                        self.micro_code_pc += 1;
+                    }
+                }
+                Branch::JI => self.micro_code_pc += self.ir as u16,
             }
-            Branch::JI => self.micro_code_pc += self.ir as u16,
+
+            self.hlt = micro_code.hlt;
         }
     }
     fn data_load(&self, from: RegisterOrSwitch) -> u8 {
@@ -162,7 +208,7 @@ impl MicroArch {
         }
     }
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone,Serialize,Deserialize)]
 struct MicroCode {
     x_bus: RegisterOrSwitch,
     y_bus: RegisterOrSwitch,
@@ -202,19 +248,19 @@ trait Assemble {
 }
 impl Assemble for u16 {
     fn assemble(&self) -> u64 {
-        self as u64
+        *self as u64
     }
 }
 impl Assemble for bool {
     fn assemble(&self) -> u64 {
-        if self {
+        if *self {
             1
         } else {
             0
         }
     }
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone,Serialize,Deserialize)]
 enum Branch {
     Plus1,
     J,
@@ -237,7 +283,7 @@ impl Assemble for Branch {
         }
     }
 }
-#[derive()]
+#[derive(Copy, Clone, Debug,Serialize,Deserialize)]
 enum MemOp {
     Nop,
     R,
@@ -252,7 +298,7 @@ impl Assemble for MemOp {
         }
     }
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone,Serialize,Deserialize)]
 enum ShiftOp {
     Nop,
     RRwC,
@@ -275,7 +321,7 @@ impl Assemble for ShiftOp {
         }
     }
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone,Serialize,Deserialize)]
 enum RegisterOrSwitch {
     Sw1,
     Sw2,
@@ -290,7 +336,7 @@ impl Assemble for RegisterOrSwitch {
         }
     }
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone,Serialize,Deserialize)]
 enum Register {
     Nop,
     R0,
@@ -325,6 +371,7 @@ impl Assemble for Register {
         }
     }
 }
+#[derive(Copy, Clone,Serialize,Deserialize)]
 enum AluOp {
     XPlusY,
     XMinusY,
