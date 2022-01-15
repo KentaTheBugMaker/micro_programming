@@ -1,6 +1,6 @@
 use crate::vm::{AluOp, Branch, MemOp, MicroArch, Register, RegisterOrSwitch, ShiftOp};
 use eframe::egui::CtxRef;
-use eframe::epi::{Frame};
+use eframe::epi::Frame;
 use std::sync::Arc;
 
 pub struct VMView {
@@ -9,6 +9,7 @@ pub struct VMView {
     open_register_view: bool,
     open_micro_code_view: bool,
     open_memory_view: bool,
+    open_exec_view: bool,
     /// where the current viewing micro code page.
     current_viewing_page: u8,
     /// inter frame data tracking
@@ -36,6 +37,7 @@ impl VMView {
             open_register_view: true,
             open_micro_code_view: true,
             open_memory_view: false,
+            open_exec_view: true,
             current_viewing_page: 0,
             hex_edit_buffer: Arc::new(Default::default()),
         }
@@ -78,12 +80,13 @@ impl eframe::epi::App for VMView {
                 ui.checkbox(&mut self.open_register_view, "Register View");
                 ui.checkbox(&mut self.open_micro_code_view, "Microcode View");
                 ui.checkbox(&mut self.open_memory_view, "Memory View");
+                ui.checkbox(&mut self.open_exec_view, "Exec View");
             });
         });
         let register_view =
             eframe::egui::Window::new("RegisterView").open(&mut self.open_register_view);
         register_view.show(ctx, |ui| {
-            crate::register_view::register_view(ui, &mut self.vm)
+            crate::register_view::register_view(ui, self.hex_edit_buffer.clone(),&mut self.vm)
         });
 
         let micro_code_base_addr = (self.current_viewing_page as u16) << 8;
@@ -99,7 +102,11 @@ impl eframe::epi::App for VMView {
                             self.current_viewing_page -= 1;
                         }
                     }
-                    ui.add(crate::hex_input::HexInput::new(&mut self.current_viewing_page,self.hex_edit_buffer.clone(),0xcafebabe));
+                    ui.add(crate::hex_input::HexInput::new(
+                        &mut self.current_viewing_page,
+                        self.hex_edit_buffer.clone(),
+                        0xcafebabe,
+                    ));
                     if ui.button(">").clicked() {
                         if self.current_viewing_page < 0xff {
                             self.current_viewing_page += 1;

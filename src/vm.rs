@@ -44,6 +44,9 @@ impl MicroArch {
             self.exec()
         }
     }
+    pub fn start(&mut self) {
+        self.hlt = false;
+    }
     /// execute 1 microcode .
     pub fn exec(&mut self) {
         if !self.hlt {

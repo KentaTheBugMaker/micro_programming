@@ -25,7 +25,7 @@ impl<'a> eframe::egui::Widget for HexInput<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut text_buffer = if self.key == *KEY.read() {
             let buffer = self.buffer.read().clone();
-            if buffer == "".to_string() {
+            if buffer != self.tgt.to_string() {
                 format!("{:02X}", self.tgt)
             } else {
                 buffer

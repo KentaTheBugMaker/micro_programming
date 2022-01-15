@@ -1,4 +1,11 @@
-pub fn register_view(ui: &mut eframe::egui::Ui, vm: &mut crate::vm::MicroArch) {
+use eframe::egui::mutex::RwLock;
+use std::sync::Arc;
+
+pub fn register_view(
+    ui: &mut eframe::egui::Ui,
+    hex_edit_buffer: Arc<RwLock<String>>,
+    vm: &mut crate::vm::MicroArch,
+) {
     ui.horizontal(|ui| {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -38,11 +45,19 @@ pub fn register_view(ui: &mut eframe::egui::Ui, vm: &mut crate::vm::MicroArch) {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("sw1");
-                    ui.add(eframe::egui::widgets::DragValue::new(&mut vm.sw1));
+                    ui.add(crate::hex_input::HexInput::new(
+                        &mut vm.sw1,
+                        hex_edit_buffer.clone(),
+                        0xfffff,
+                    ));
                 });
                 ui.horizontal(|ui| {
                     ui.label("sw2");
-                    ui.add(eframe::egui::widgets::DragValue::new(&mut vm.sw2));
+                    ui.add(crate::hex_input::HexInput::new(
+                        &mut vm.sw2,
+                        hex_edit_buffer,
+                        0xffffff,
+                    ));
                 });
             })
         })
