@@ -267,7 +267,7 @@ impl Assemble for bool {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Branch {
     Plus1,
     J,
@@ -277,17 +277,18 @@ pub enum Branch {
     JV,
     JI,
 }
-impl ToString for Branch{
+impl ToString for Branch {
     fn to_string(&self) -> String {
-        match self{
-            Branch::Plus1 => {"+1"}
-            Branch::J => {"J"}
-            Branch::JM => {"JM"}
-            Branch::JZ => {"JZ"}
-            Branch::JC => {"JC"}
-            Branch::JV => {"JV"}
-            Branch::JI => {"JI"}
-        }.to_owned()
+        match self {
+            Branch::Plus1 => "+1",
+            Branch::J => "J",
+            Branch::JM => "JM",
+            Branch::JZ => "JZ",
+            Branch::JC => "JC",
+            Branch::JV => "JV",
+            Branch::JI => "JI",
+        }
+        .to_owned()
     }
 }
 impl Assemble for Branch {
@@ -303,19 +304,20 @@ impl Assemble for Branch {
         }
     }
 }
-#[derive(Copy, Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum MemOp {
     Nop,
     R,
     W,
 }
-impl ToString for MemOp{
+impl ToString for MemOp {
     fn to_string(&self) -> String {
-        match self{
-            MemOp::Nop => {""}
-            MemOp::R => {"R"}
-            MemOp::W => {"W"}
-        }.to_owned()
+        match self {
+            MemOp::Nop => "",
+            MemOp::R => "R",
+            MemOp::W => "W",
+        }
+        .to_owned()
     }
 }
 impl Assemble for MemOp {
@@ -327,7 +329,7 @@ impl Assemble for MemOp {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum ShiftOp {
     Nop,
     RRwC,
@@ -337,17 +339,18 @@ pub enum ShiftOp {
     SRA,
     SLA,
 }
-impl ToString for ShiftOp{
+impl ToString for ShiftOp {
     fn to_string(&self) -> String {
-        match self{
-            ShiftOp::Nop => {""}
-            ShiftOp::RRwC => {"RRwC"}
-            ShiftOp::RlwC => {"RLwC"}
-            ShiftOp::SRL => {"SRL"}
-            ShiftOp::SLL => {"SLL"}
-            ShiftOp::SRA => {"SRA"}
-            ShiftOp::SLA => {"SLA"}
-        }.to_owned()
+        match self {
+            ShiftOp::Nop => "",
+            ShiftOp::RRwC => "RRwC",
+            ShiftOp::RlwC => "RLwC",
+            ShiftOp::SRL => "SRL",
+            ShiftOp::SLL => "SLL",
+            ShiftOp::SRA => "SRA",
+            ShiftOp::SLA => "SLA",
+        }
+        .to_owned()
     }
 }
 impl Assemble for ShiftOp {
@@ -442,7 +445,7 @@ impl Assemble for Register {
         }
     }
 }
-#[derive(Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum AluOp {
     XPlusY,
     XMinusY,
@@ -466,7 +469,7 @@ impl Assemble for AluOp {
     }
 }
 impl ToString for AluOp {
-    fn to_string(&self) ->String {
+    fn to_string(&self) -> String {
         match self {
             AluOp::XPlusY => "X+Y",
             AluOp::XMinusY => "X-Y",
@@ -475,6 +478,7 @@ impl ToString for AluOp {
             AluOp::XxorY => "X^Y",
             AluOp::XPlus1 => "X+1",
             AluOp::XMinus1 => "X-1",
-        }.to_owned()
+        }
+        .to_owned()
     }
 }
