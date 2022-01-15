@@ -8,7 +8,10 @@ authors = ["t18b219k <t18b219k@mail.cc.niigata-u.ac.jp>"]
 
 [dependencies]
 serde = {version ="1.0",features=["derive"]}
-eframe = "0.16.0"
+eframe = {version ="0.16",features=["persistence"]}
 once_cell = "1.9.0"
+ron = "0.7.0"
+bincode ="1"
+rfd="0.6"
 [profile.release]
 opt-level = 2

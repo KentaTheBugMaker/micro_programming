@@ -24,7 +24,12 @@ static KEY: once_cell::sync::Lazy<RwLock<usize>> = once_cell::sync::Lazy::new(||
 impl<'a> eframe::egui::Widget for HexInput<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut text_buffer = if self.key == *KEY.read() {
-            self.buffer.read().clone()
+            let buffer = self.buffer.read().clone();
+            if buffer == "".to_string() {
+                format!("{:02X}", self.tgt)
+            } else {
+                buffer
+            }
         } else {
             format!("{:02X}", self.tgt)
         };
@@ -33,7 +38,7 @@ impl<'a> eframe::egui::Widget for HexInput<'a> {
 
         let response = ui.add(text_edit);
 
-        if response.changed() {
+        if response.has_focus() {
             if let Ok(v) = u8::from_str_radix(&text_buffer, 16) {
                 *self.tgt = v;
                 *self.buffer.write() = text_buffer;

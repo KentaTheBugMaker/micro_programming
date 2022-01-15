@@ -1,22 +1,26 @@
 pub fn micro_code_view(
     ui: &mut eframe::egui::Ui,
-    id_source: usize,
+    micro_code_addr: usize,
     micro_code: &mut crate::vm::MicroCode,
 ) {
     ui.horizontal(|ui| {
-        combo_box_registers_and_switch(ui, id_source, &mut micro_code.x_bus);
-        combo_box_registers_and_switch(ui, id_source + 1, &mut micro_code.y_bus);
-        combo_box_alu(ui, id_source + 2, &mut micro_code.alu);
-        combo_box_sft(ui, id_source + 3, &mut micro_code.sft);
-        combo_box_bool(ui, id_source + 4, &mut micro_code.sin);
-        combo_box_bool(ui, id_source + 5, &mut micro_code.fl);
-        combo_box_registers(ui, id_source + 6, &mut micro_code.z_bus);
-        combo_box_mem(ui, id_source + 7, &mut micro_code.mem);
-        combo_box_branch(ui, id_source + 8, &mut micro_code.branch);
-        combo_box_bool(ui, id_source + 9, &mut micro_code.hlt);
+        ui.label(format!("{:04X}H", micro_code_addr));
+        combo_box_registers_and_switch(ui, micro_code_addr * 10, &mut micro_code.x_bus);
+        combo_box_registers_and_switch(ui, micro_code_addr * 10 + 1, &mut micro_code.y_bus);
+        combo_box_alu(ui, micro_code_addr * 10 + 2, &mut micro_code.alu);
+        combo_box_sft(ui, micro_code_addr * 10 + 3, &mut micro_code.sft);
+        combo_box_bool(ui, micro_code_addr * 10 + 4, &mut micro_code.sin);
+        combo_box_bool(ui, micro_code_addr * 10 + 5, &mut micro_code.fl);
+        combo_box_registers(ui, micro_code_addr * 10 + 6, &mut micro_code.z_bus);
+        combo_box_mem(ui, micro_code_addr * 10 + 7, &mut micro_code.mem);
+        combo_box_branch(ui, micro_code_addr * 10 + 8, &mut micro_code.branch);
+        combo_box_bool(ui, micro_code_addr * 10 + 9, &mut micro_code.hlt);
+        ui.add(eframe::egui::widgets::DragValue::new(&mut micro_code.addr));
     });
 }
+
 use crate::vm::{AluOp, Branch, MemOp, Register, RegisterOrSwitch, ShiftOp};
+
 const REGISTER_OR_SWITCH_SELECTABLE: [RegisterOrSwitch; 2] =
     [RegisterOrSwitch::Sw1, RegisterOrSwitch::Sw2];
 const REGISTER_SELECTABLE: [Register; 13] = [
