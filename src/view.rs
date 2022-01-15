@@ -1,15 +1,18 @@
 use crate::vm::MicroArch;
 use eframe::egui::CtxRef;
 use eframe::epi::Frame;
+use std::sync::Arc;
 
 pub struct VMView {
     ///VM
     vm: crate::vm::MicroArch,
     open_register_view: bool,
     open_micro_code_view: bool,
-    open_memory_view:bool,
+    open_memory_view: bool,
     /// where the current viewing micro code page.
     current_viewing_page: u8,
+    ///
+    hex_edit_buffer: Arc<eframe::egui::mutex::RwLock<String>>,
 }
 impl VMView {
     pub fn init() -> Self {
@@ -19,6 +22,7 @@ impl VMView {
             open_micro_code_view: true,
             open_memory_view: false,
             current_viewing_page: 0,
+            hex_edit_buffer: Arc::new(Default::default()),
         }
     }
 }
@@ -27,8 +31,9 @@ impl eframe::epi::App for VMView {
         let panel = eframe::egui::TopBottomPanel::bottom("windows");
         panel.show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.checkbox(&mut self.open_register_view, "RegisterView");
-                ui.checkbox(&mut self.open_micro_code_view, "MicrocodeView");
+                ui.checkbox(&mut self.open_register_view, "Register View");
+                ui.checkbox(&mut self.open_micro_code_view, "Microcode View");
+                ui.checkbox(&mut self.open_memory_view, "Memory View");
             });
         });
         let register_view =
@@ -89,6 +94,11 @@ impl eframe::epi::App for VMView {
                 });
             });
         });
+        eframe::egui::Window::new("Ram View")
+            .open(&mut self.open_memory_view)
+            .show(ctx, |ui| {
+                crate::ram_view::ram_view(ui, self.hex_edit_buffer.clone(), &mut self.vm.memory);
+            });
     }
 
     fn name(&self) -> &str {

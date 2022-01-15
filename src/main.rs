@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
-#![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
+//#![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
+mod hex_input;
 mod micro_code_view;
+mod ram_view;
 mod register_view;
 mod view;
 mod vm;

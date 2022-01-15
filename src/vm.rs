@@ -27,7 +27,7 @@ impl MicroArch {
         Self {
             micro_program_counter: 0,
             micro_program: micro_codes,
-            memory: vec![],
+            memory: vec![0; 256],
             gpr: [0; 7],
             pc: 0,
             ir: 0,
