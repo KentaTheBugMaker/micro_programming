@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use serde::Serialize;
-use std::fmt::{Debug, Formatter};
+
 /// Small 8 bit micro code driven architecture.
 ///
 ///
@@ -217,17 +217,17 @@ impl MicroArch {
 }
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct MicroCode {
-    x_bus: RegisterOrSwitch,
-    y_bus: RegisterOrSwitch,
-    alu: AluOp,
-    sft: ShiftOp,
-    sin: bool,
-    fl: bool,
-    z_bus: Register,
-    mem: MemOp,
-    branch: Branch,
-    hlt: bool,
-    addr: u16,
+    pub x_bus: RegisterOrSwitch,
+    pub y_bus: RegisterOrSwitch,
+    pub alu: AluOp,
+    pub sft: ShiftOp,
+    pub sin: bool,
+    pub fl: bool,
+    pub z_bus: Register,
+    pub mem: MemOp,
+    pub branch: Branch,
+    pub hlt: bool,
+    pub addr: u16,
 }
 ///This architecture use 42bit micro code
 impl Assemble for MicroCode {
@@ -267,8 +267,8 @@ impl Assemble for bool {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-enum Branch {
+#[derive(Debug, Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+pub enum Branch {
     Plus1,
     J,
     JM,
@@ -276,6 +276,19 @@ enum Branch {
     JC,
     JV,
     JI,
+}
+impl ToString for Branch{
+    fn to_string(&self) -> String {
+        match self{
+            Branch::Plus1 => {"+1"}
+            Branch::J => {"J"}
+            Branch::JM => {"JM"}
+            Branch::JZ => {"JZ"}
+            Branch::JC => {"JC"}
+            Branch::JV => {"JV"}
+            Branch::JI => {"JI"}
+        }.to_owned()
+    }
 }
 impl Assemble for Branch {
     fn assemble(&self) -> u64 {
@@ -290,11 +303,20 @@ impl Assemble for Branch {
         }
     }
 }
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-enum MemOp {
+#[derive(Copy, Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
+pub enum MemOp {
     Nop,
     R,
     W,
+}
+impl ToString for MemOp{
+    fn to_string(&self) -> String {
+        match self{
+            MemOp::Nop => {""}
+            MemOp::R => {"R"}
+            MemOp::W => {"W"}
+        }.to_owned()
+    }
 }
 impl Assemble for MemOp {
     fn assemble(&self) -> u64 {
@@ -305,8 +327,8 @@ impl Assemble for MemOp {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-enum ShiftOp {
+#[derive(Debug, Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+pub enum ShiftOp {
     Nop,
     RRwC,
     RlwC,
@@ -314,6 +336,19 @@ enum ShiftOp {
     SLL,
     SRA,
     SLA,
+}
+impl ToString for ShiftOp{
+    fn to_string(&self) -> String {
+        match self{
+            ShiftOp::Nop => {""}
+            ShiftOp::RRwC => {"RRwC"}
+            ShiftOp::RlwC => {"RLwC"}
+            ShiftOp::SRL => {"SRL"}
+            ShiftOp::SLL => {"SLL"}
+            ShiftOp::SRA => {"SRA"}
+            ShiftOp::SLA => {"SLA"}
+        }.to_owned()
+    }
 }
 impl Assemble for ShiftOp {
     fn assemble(&self) -> u64 {
@@ -328,11 +363,20 @@ impl Assemble for ShiftOp {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-enum RegisterOrSwitch {
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
+pub enum RegisterOrSwitch {
     Sw1,
     Sw2,
     Register(Register),
+}
+impl ToString for RegisterOrSwitch {
+    fn to_string(&self) -> String {
+        match self {
+            RegisterOrSwitch::Sw1 => "Sw1".to_owned(),
+            RegisterOrSwitch::Sw2 => "Sw2".to_owned(),
+            RegisterOrSwitch::Register(register) => register.to_string(),
+        }
+    }
 }
 impl Assemble for RegisterOrSwitch {
     fn assemble(&self) -> u64 {
@@ -343,8 +387,8 @@ impl Assemble for RegisterOrSwitch {
         }
     }
 }
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-enum Register {
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
+pub enum Register {
     Nop,
     R0,
     R1,
@@ -358,6 +402,26 @@ enum Register {
     Mdr,
     Mar,
     Str,
+}
+impl ToString for Register {
+    fn to_string(&self) -> String {
+        match self {
+            Register::Nop => "",
+            Register::R0 => "R0",
+            Register::R1 => "R1",
+            Register::R2 => "R2",
+            Register::R3 => "R3",
+            Register::R4 => "R4",
+            Register::R5 => "R5",
+            Register::R6 => "R6",
+            Register::Pc => "PC",
+            Register::Ir => "IR",
+            Register::Mdr => "MDR",
+            Register::Mar => "MAR",
+            Register::Str => "STR",
+        }
+        .to_owned()
+    }
 }
 impl Assemble for Register {
     fn assemble(&self) -> u64 {
@@ -378,8 +442,8 @@ impl Assemble for Register {
         }
     }
 }
-#[derive(Copy, Clone, Serialize, Deserialize)]
-enum AluOp {
+#[derive(Copy, Clone, Serialize, Deserialize,Eq, PartialEq)]
+pub enum AluOp {
     XPlusY,
     XMinusY,
     XAndY,
@@ -401,9 +465,9 @@ impl Assemble for AluOp {
         }
     }
 }
-impl Debug for AluOp {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let text = match self {
+impl ToString for AluOp {
+    fn to_string(&self) ->String {
+        match self {
             AluOp::XPlusY => "X+Y",
             AluOp::XMinusY => "X-Y",
             AluOp::XAndY => "X&Y",
@@ -411,7 +475,6 @@ impl Debug for AluOp {
             AluOp::XxorY => "X^Y",
             AluOp::XPlus1 => "X+1",
             AluOp::XMinus1 => "X-1",
-        };
-        f.write_str(text)
+        }.to_owned()
     }
 }
