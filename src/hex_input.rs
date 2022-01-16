@@ -1,30 +1,28 @@
 use eframe::egui::mutex::RwLock;
 use eframe::egui::{Response, Ui};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Hexadecimal input.
 ///
 ///
 pub struct HexInput<'a> {
     tgt: &'a mut u8,
-    buffer: Arc<RwLock<String>>,
     key: usize,
 }
 impl<'a> HexInput<'a> {
-    pub fn new(target: &'a mut u8, buffer: Arc<RwLock<String>>, key: usize) -> Self {
-        Self {
-            tgt: target,
-            buffer,
-            key,
-        }
+    pub fn new(target: &'a mut u8, key: usize) -> Self {
+        Self { tgt: target, key }
     }
 }
 
-static KEY: once_cell::sync::Lazy<RwLock<usize>> = once_cell::sync::Lazy::new(|| RwLock::new(0));
+static KEY: once_cell::sync::Lazy<AtomicUsize> = once_cell::sync::Lazy::new(|| AtomicUsize::new(0));
+static BUFFER: once_cell::sync::Lazy<RwLock<String>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(String::new()));
+
 impl<'a> eframe::egui::Widget for HexInput<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut text_buffer = if self.key == *KEY.read() {
-            let buffer = self.buffer.read().clone();
+        let mut text_buffer = if self.key == KEY.load(Ordering::Relaxed) {
+            let buffer = BUFFER.read().clone();
             if buffer != self.tgt.to_string() {
                 format!("{:02X}", self.tgt)
             } else {
@@ -41,8 +39,8 @@ impl<'a> eframe::egui::Widget for HexInput<'a> {
         if response.has_focus() {
             if let Ok(v) = u8::from_str_radix(&text_buffer, 16) {
                 *self.tgt = v;
-                *self.buffer.write() = text_buffer;
-                *KEY.write() = self.key;
+                *BUFFER.write() = text_buffer;
+                KEY.store(self.key, Ordering::SeqCst);
             }
         }
         response

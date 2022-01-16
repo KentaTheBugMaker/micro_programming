@@ -39,16 +39,29 @@ impl MicroArch {
             hlt: false,
         }
     }
-    pub fn exec_until_hlt(&mut self) {
-        while !self.hlt {
-            self.exec()
-        }
+    pub fn reset_register(&mut self) {
+        self.hlt = false;
+        self.micro_program_counter = 0;
+        self.gpr[0] = 0;
+        self.gpr[1] = 0;
+        self.gpr[2] = 0;
+        self.gpr[3] = 0;
+        self.gpr[4] = 0;
+        self.gpr[5] = 0;
+        self.gpr[6] = 0;
+        self.pc = 0;
+        self.ir = 0;
+        self.mdr = 0;
+        self.str = 0;
+        self.sw1 = 0;
+        self.sw2 = 0;
     }
+
     pub fn start(&mut self) {
         self.hlt = false;
     }
     /// execute 1 microcode .
-    pub fn exec(&mut self) {
+    pub fn exec(&mut self) -> bool {
         if !self.hlt {
             // fetch micro code .
             let micro_code = self.micro_program[self.micro_program_counter as usize];
@@ -66,21 +79,25 @@ impl MicroArch {
             };
 
             if micro_code.fl {
+                //minus flag
                 if (alu_out & MSB) == MSB {
                     self.str |= 0x01;
                 } else {
                     self.str &= 0b11111110;
                 }
+                //zero flag
                 if alu_out == 0 {
                     self.str |= 0x02;
                 } else {
                     self.str &= 0b11111101;
                 }
+                //carry flag
                 if (x_bus as usize) + (y_bus as usize) > 255 {
                     self.str |= 0x04;
                 } else {
                     self.str &= 0b11111011;
                 }
+                //overflow flag
                 let test = (x_bus as isize) + (y_bus as isize);
                 if (127 < test) | (test < -128) {
                     self.str |= 0x08;
@@ -190,11 +207,15 @@ impl MicroArch {
                         self.micro_program_counter += 1;
                     }
                 }
-                Branch::JI => self.micro_program_counter += self.ir as u16,
+                Branch::JI => self.micro_program_counter = micro_code.addr + self.ir as u16,
             }
-
-            self.hlt = micro_code.hlt;
+            if micro_code.hlt {
+                println!("HLT detected sequencer stop ");
+                self.hlt = micro_code.hlt;
+            }
+            return micro_code.hlt;
         }
+        true
     }
     fn data_load(&self, from: RegisterOrSwitch) -> u8 {
         match from {
