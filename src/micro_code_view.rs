@@ -1,25 +1,57 @@
 pub fn micro_code_view(
     ui: &mut eframe::egui::Ui,
+    micro_code_base_addr: usize,
     micro_code_addr: usize,
-    micro_code: &mut crate::vm::MicroCode,
+    micro_codes: &mut [crate::vm::MicroCode],
 ) {
-    ui.horizontal(|ui| {
-        ui.label(format!("{:04X}H", micro_code_addr));
-        combo_box_registers_and_switch(ui, micro_code_addr * 10, &mut micro_code.x_bus);
-        combo_box_registers_and_switch(ui, micro_code_addr * 10 + 1, &mut micro_code.y_bus);
-        combo_box_alu(ui, micro_code_addr * 10 + 2, &mut micro_code.alu);
-        combo_box_sft(ui, micro_code_addr * 10 + 3, &mut micro_code.sft);
-        combo_box_bool(ui, micro_code_addr * 10 + 4, &mut micro_code.sin);
-        combo_box_bool(ui, micro_code_addr * 10 + 5, &mut micro_code.fl);
-        combo_box_registers(ui, micro_code_addr * 10 + 6, &mut micro_code.z_bus);
-        combo_box_mem(ui, micro_code_addr * 10 + 7, &mut micro_code.mem);
-        combo_box_branch(ui, micro_code_addr * 10 + 8, &mut micro_code.branch);
-        combo_box_bool(ui, micro_code_addr * 10 + 9, &mut micro_code.hlt);
-        ui.add(eframe::egui::widgets::DragValue::new(&mut micro_code.addr));
+    const TABLE_NAME: [&str; 12] = [
+        "Address",
+        "X-Bus",
+        "Y-Bus",
+        "ALU",
+        "SFT",
+        "Sin",
+        "FL",
+        "Z-Bus",
+        "Mem",
+        "Branch",
+        "Halt",
+        "MicrocodeAddress",
+    ];
+    eframe::egui::ScrollArea::both().show(ui, |ui| {
+        ui.columns(12, |columns| {
+            for (x, name) in TABLE_NAME.iter().enumerate() {
+                columns[x].label(*name);
+            }
+            for (x, micro_code) in micro_codes.iter_mut().enumerate() {
+                columns[0].add_sized([64.0, 18.0], {
+                    let addr = micro_code_base_addr + x;
+                    Label::new(RichText::new(format!("{:04X}H", addr)).color(
+                        if addr == micro_code_addr {
+                            Color32::RED
+                        } else {
+                            Color32::WHITE
+                        },
+                    ))
+                });
+                combo_box_registers_and_switch(&mut columns[1], x * 10, &mut micro_code.x_bus);
+                combo_box_registers_and_switch(&mut columns[2], x * 10 + 1, &mut micro_code.y_bus);
+                combo_box_alu(&mut columns[3], x * 10 + 2, &mut micro_code.alu);
+                combo_box_sft(&mut columns[4], x * 10 + 3, &mut micro_code.sft);
+                combo_box_bool(&mut columns[5], x * 10 + 4, &mut micro_code.sin);
+                combo_box_bool(&mut columns[6], x * 10 + 5, &mut micro_code.fl);
+                combo_box_registers(&mut columns[7], x * 10 + 6, &mut micro_code.z_bus);
+                combo_box_mem(&mut columns[8], x * 10 + 7, &mut micro_code.mem);
+                combo_box_branch(&mut columns[9], x * 10 + 8, &mut micro_code.branch);
+                combo_box_bool(&mut columns[10], x * 10 + 9, &mut micro_code.hlt);
+                columns[11].add(eframe::egui::widgets::DragValue::new(&mut micro_code.addr));
+            }
+        });
     });
 }
 
 use crate::vm::{AluOp, Branch, MemOp, Register, RegisterOrSwitch, ShiftOp};
+use eframe::egui::{Color32, Label, RichText};
 
 const REGISTER_OR_SWITCH_SELECTABLE: [RegisterOrSwitch; 2] =
     [RegisterOrSwitch::Sw1, RegisterOrSwitch::Sw2];
@@ -89,10 +121,10 @@ const SHIFT_OP_SELECTABLE: [ShiftOp; 7] = [
     ShiftOp::Nop,
     ShiftOp::RRwC,
     ShiftOp::RlwC,
-    ShiftOp::SRL,
-    ShiftOp::SLL,
-    ShiftOp::SRA,
-    ShiftOp::SLA,
+    ShiftOp::Srl,
+    ShiftOp::Sll,
+    ShiftOp::Sra,
+    ShiftOp::Sla,
 ];
 fn combo_box_sft(ui: &mut eframe::egui::Ui, id: usize, shift_op: &mut ShiftOp) {
     eframe::egui::ComboBox::from_id_source(id)

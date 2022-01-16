@@ -57,6 +57,9 @@ pub fn register_view(
                 "micro code address : {:04X}H",
                 vm.micro_program_counter
             ));
+            if ui.button("Wakeup").clicked() {
+                vm.start();
+            }
             if ui.button("Step execution").clicked() {
                 *auto_exec = false;
                 vm.exec();

@@ -132,7 +132,7 @@ impl MicroArch {
                         x
                     }
                 }
-                ShiftOp::SRL => {
+                ShiftOp::Srl => {
                     self.str |= (alu_out & LSB) << 2;
                     let x = alu_out >> 1;
                     if micro_code.sin {
@@ -141,7 +141,7 @@ impl MicroArch {
                         x
                     }
                 }
-                ShiftOp::SLL | ShiftOp::SLA => {
+                ShiftOp::Sll | ShiftOp::Sla => {
                     self.str |= (alu_out & MSB) >> 4;
                     let x = alu_out << 1;
                     if micro_code.sin {
@@ -150,7 +150,7 @@ impl MicroArch {
                         x
                     }
                 }
-                ShiftOp::SRA => {
+                ShiftOp::Sra => {
                     let msb = alu_out & MSB;
                     self.str |= (alu_out >> 1) << 2;
                     msb | (alu_out >> 1)
@@ -358,10 +358,10 @@ pub enum ShiftOp {
     Nop,
     RRwC,
     RlwC,
-    SRL,
-    SLL,
-    SRA,
-    SLA,
+    Srl,
+    Sll,
+    Sra,
+    Sla,
 }
 impl ToString for ShiftOp {
     fn to_string(&self) -> String {
@@ -369,10 +369,10 @@ impl ToString for ShiftOp {
             ShiftOp::Nop => "",
             ShiftOp::RRwC => "RRwC",
             ShiftOp::RlwC => "RLwC",
-            ShiftOp::SRL => "SRL",
-            ShiftOp::SLL => "SLL",
-            ShiftOp::SRA => "SRA",
-            ShiftOp::SLA => "SLA",
+            ShiftOp::Srl => "SRL",
+            ShiftOp::Sll => "SLL",
+            ShiftOp::Sra => "SRA",
+            ShiftOp::Sla => "SLA",
         }
         .to_owned()
     }
@@ -383,10 +383,10 @@ impl Assemble for ShiftOp {
             ShiftOp::Nop => 0,
             ShiftOp::RRwC => 1,
             ShiftOp::RlwC => 2,
-            ShiftOp::SRL => 3,
-            ShiftOp::SLL => 4,
-            ShiftOp::SRA => 5,
-            ShiftOp::SLA => 6,
+            ShiftOp::Srl => 3,
+            ShiftOp::Sll => 4,
+            ShiftOp::Sra => 5,
+            ShiftOp::Sla => 6,
         }
     }
 }

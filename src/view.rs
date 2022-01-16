@@ -48,7 +48,7 @@ impl eframe::epi::App for VMView {
                 ui.menu_button("File", |ui| {
                     if ui.button("Read CPU config & main memory").clicked() {
                         let cpu_and_memory: Option<crate::vm::MicroArch> = rfd::FileDialog::new()
-                            .add_filter("マイクロコードとメインメモリ", &["cpu_memory"])
+                            .add_filter("cpu with main memory", &["cpu_memory"])
                             .pick_file()
                             .map(|path| {
                                 std::fs::read(path).ok().map(|cpu_and_memory| {
@@ -62,15 +62,13 @@ impl eframe::epi::App for VMView {
                         }
                     }
                     if ui.button("Save CPU config & main memory").clicked() {
-                        rfd::FileDialog::new()
+                        if let Some((path, Some(vm))) = rfd::FileDialog::new()
                             .add_filter("マイクロコードとメインメモリ", &["cpu_memory"])
                             .save_file()
                             .map(|x| (x, bincode::serialize(&self.vm).ok()))
-                            .map(|(path, vm)| {
-                                if let Some(vm) = vm {
-                                    std::fs::write(path, vm).ok();
-                                }
-                            });
+                        {
+                            std::fs::write(path, vm).ok();
+                        }
                     }
                 });
                 ui.checkbox(&mut self.open_register_view, "Register View");
@@ -92,40 +90,24 @@ impl eframe::epi::App for VMView {
         micro_code_view.show(ctx, |ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
-                    if ui.button("<").clicked() {
-                        if self.current_viewing_page > 0 {
-                            self.current_viewing_page -= 1;
-                        }
+                    if ui.button("<").clicked() & (self.current_viewing_page > 0) {
+                        self.current_viewing_page -= 1;
                     }
                     ui.add(crate::hex_input::HexInput::new(
                         &mut self.current_viewing_page,
                         0xcafebabe,
                     ));
-                    if ui.button(">").clicked() {
-                        if self.current_viewing_page < 0xff {
-                            self.current_viewing_page += 1;
-                        }
+                    if ui.button(">").clicked() & (self.current_viewing_page < 0xff) {
+                        self.current_viewing_page += 1;
                     }
                 });
-                eframe::egui::containers::ScrollArea::vertical().show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.vertical(|ui| {
-                            for micro_code_addr in
-                                micro_code_base_addr..(micro_code_base_addr + 256)
-                            {
-                                if let Some(micro_code) =
-                                    self.vm.micro_program.get_mut(micro_code_addr as usize)
-                                {
-                                    crate::micro_code_view::micro_code_view(
-                                        ui,
-                                        micro_code_addr as usize,
-                                        micro_code,
-                                    )
-                                }
-                            }
-                        });
-                    })
-                });
+                crate::micro_code_view::micro_code_view(
+                    ui,
+                    micro_code_base_addr as usize,
+                    self.vm.micro_program_counter as usize,
+                    &mut self.vm.micro_program
+                        [micro_code_base_addr as usize..(micro_code_base_addr + 0x100) as usize],
+                )
             });
         });
         eframe::egui::Window::new("Ram View")
@@ -134,14 +116,13 @@ impl eframe::epi::App for VMView {
                 crate::ram_view::ram_view(ui, &mut self.vm.memory);
             });
         if self.auto_exec {
-            println!("Auto exec enabled");
             self.auto_exec = !self.vm.exec();
             _frame.request_repaint();
         }
     }
     fn on_exit(&mut self) {
         let path = rfd::FileDialog::new()
-            .add_filter("マイクロコードとメインメモリ", &["cpu_memory"])
+            .add_filter("cpu and main memory", &["cpu_memory"])
             .save_file();
         if let Some(path) = path {
             if let Ok(vm_persistence) = bincode::serialize(&self.vm) {
