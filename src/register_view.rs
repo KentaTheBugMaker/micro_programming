@@ -9,7 +9,7 @@ pub fn register_view(
                 ui.vertical(|ui| {
                     ui.label("R0~R6");
                     for (name, x) in vm.gpr.iter().enumerate() {
-                        ui.label(format!("R{} {:02x}H", name, x));
+                        ui.label(format!("R{} {:02X}H", name, x));
                     }
                 });
                 ui.horizontal_top(|ui| {

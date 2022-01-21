@@ -337,7 +337,7 @@ pub enum MemOp {
 impl ToString for MemOp {
     fn to_string(&self) -> String {
         match self {
-            MemOp::Nop => "",
+            MemOp::Nop => "Nop",
             MemOp::R => "R",
             MemOp::W => "W",
         }
@@ -366,7 +366,7 @@ pub enum ShiftOp {
 impl ToString for ShiftOp {
     fn to_string(&self) -> String {
         match self {
-            ShiftOp::Nop => "",
+            ShiftOp::Nop => "Nop",
             ShiftOp::RRwC => "RRwC",
             ShiftOp::RlwC => "RLwC",
             ShiftOp::Srl => "SRL",
@@ -433,7 +433,7 @@ pub enum Register {
 impl ToString for Register {
     fn to_string(&self) -> String {
         match self {
-            Register::Nop => "",
+            Register::Nop => "Nop",
             Register::R0 => "R0",
             Register::R1 => "R1",
             Register::R2 => "R2",

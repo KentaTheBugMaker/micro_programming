@@ -26,17 +26,112 @@ pub fn micro_code_view(
                             .monospace(),
                     )
                 });
-                columns[1].register_or_switch(&mut micro_code.x_bus, x * 10);
-                columns[2].register_or_switch(&mut micro_code.y_bus, x * 10 + 1);
-                columns[3].alu(&mut micro_code.alu, x * 10 + 2);
-                columns[4].sft(&mut micro_code.sft, x * 10 + 3);
-                columns[5].bool(&mut micro_code.sin, x * 10 + 4);
-                columns[6].bool(&mut micro_code.fl, x * 10 + 5);
-                columns[7].register(&mut micro_code.z_bus, x * 10 + 6);
-                columns[8].mem(&mut micro_code.mem, x * 10 + 7);
-                columns[9].branch(&mut micro_code.branch, x * 10 + 8);
-                columns[10].bool(&mut micro_code.hlt, x * 10 + 9);
-                columns[11].add(eframe::egui::widgets::DragValue::new(&mut micro_code.addr));
+                columns[1].register_or_switch(&mut micro_code.x_bus, x * 10).on_hover_ui(|ui|{
+                    ui.heading("X bus.");
+                    ui.label("select which value inputted to ALU. if no one selected 0 inputted to ALU.");
+                });
+                columns[2].register_or_switch(&mut micro_code.y_bus, x * 10 + 1).on_hover_ui(|ui|{
+                    ui.heading("Y bus.");
+                    ui.label("select which value inputted to ALU. if no one selected 0 inputted to ALU.");
+                });
+                columns[3].alu(&mut micro_code.alu, x * 10 + 2).on_hover_ui(|ui|{
+                    ui.heading("ALU operation.");
+                    ui.label("calculated value submitted to shifter.");
+                });
+                columns[4].sft(&mut micro_code.sft, x * 10 + 3).on_hover_ui(|ui|{
+                    ui.heading("Shift operation.");
+                    ui.label("even if FL = 0 carry flag updated after shift operation.");
+                    ui.columns(2,|columns|{
+                        columns[0].label("Nop");
+                        columns[1].label("don't shift");
+                        columns[0].label("RRwC");
+                        columns[1].label("rotate right with carry flag");
+                        columns[0].label("RLwC");
+                        columns[1].label("rotate left with carry flag");
+                        columns[0].label("SRL");
+                        columns[1].label("logical right shift. overflowed bit stored to carry.");
+                        columns[0].label("SLL");
+                        columns[1].label("logical left shift. overflowed bit stored to carry.");
+                        columns[0].label("SRA");
+                        columns[1].label("arithmetic right shift. overflowed bit stored to carry.");
+                        columns[0].label("SLA");
+                        columns[1].label("arithmetic left shift. overflowed bit stored to carry.");
+                    });
+                });
+                columns[5].bool(&mut micro_code.sin, x * 10 + 4).on_hover_ui(|ui|{
+                    ui.heading("Shifter input bit");
+                    ui.columns(2,|columns|{
+                        columns[0].label("SRL");
+                        columns[1].label("put to bit 7 after shift op.");
+                        columns[0].label("SLL");
+                        columns[1].label("put to bit 0 after shift op.");
+                        columns[0].label("SLA");
+                        columns[1].label("put to bit 7 after shift op.");
+                    });
+                });
+                columns[6].bool(&mut micro_code.fl, x * 10 + 5).on_hover_ui(|ui|{
+                    ui.heading("Flag update.");
+                    ui.columns(2,|ui|{
+                        ui[0].label("0");
+                        ui[1].label(" don't update STR");
+                        ui[0].label("1");
+                        ui[1].label("update STR value by ALU result.");
+                    })
+                });
+                columns[7].register(&mut micro_code.z_bus, x * 10 + 6).on_hover_ui(|ui|{
+                    ui.heading("Z bus.");
+                    ui.label("if Nop selected don't update register.");
+                });
+                columns[8].mem(&mut micro_code.mem, x * 10 + 7).on_hover_ui(|ui|{
+                    ui.heading("Memory operation.");
+                    ui.columns(2,|columns|{
+                        columns[0].label("Nop");
+                        columns[1].label("no memory operation.");
+                        columns[0].label("R");
+                        columns[1].label("memory read from (MAR). read value stored to MDR.");
+                        columns[0].label("W");
+                        columns[1].label("memory write to (MAR) with MDR data");
+                    })
+                });
+                columns[9].branch(&mut micro_code.branch, x * 10 + 8).on_hover_ui(|ui|{
+                    ui.heading("Branch operation.");
+                    ui.label("");
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("+1");
+                        ui.label("Increment micro code address after execute this micro code.");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("J");
+                        ui.label("set micro code address specified by B.Addr after execute");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("JM");
+                        ui.label("if STR[0] = 1 then set micro code address specified by B.Addr else Increment. after execute");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("JZ");
+                        ui.label("if STR[1] = 1 then set micro code address specified by B.Addr else Increment. after execute");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("JC");
+                        ui.label("if STR[2] = 1 then set micro code address specified by B.Addr else Increment. after execute");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("JV");
+                        ui.label("if STR[3] = 1 then set micro code address specified by B.Addr else Increment. after execute");
+                    });
+                    ui.horizontal_wrapped(|ui|{
+                        ui.label("JI");
+                        ui.label("set micro code address to IR+B.addr after execute.");
+                    });
+                });
+                columns[10].bool(&mut micro_code.hlt, x * 10 + 9).on_hover_ui(|ui|{
+                    ui.heading("Halt bit");
+                    ui.label("if 1 then stop execution.");
+                });
+                columns[11].add(eframe::egui::widgets::DragValue::new(&mut micro_code.addr)).on_hover_ui(|ui|{
+                    ui.label("Micro code address");
+                });
             }
         });
     });
